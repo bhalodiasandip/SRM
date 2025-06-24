@@ -49,6 +49,7 @@ class RequirementSerializer(serializers.ModelSerializer):
     skill_name = serializers.SerializerMethodField()
     requirement_type = serializers.SerializerMethodField()
     can_update = serializers.SerializerMethodField() 
+    bid_count = serializers.SerializerMethodField()
     farmer_rating = serializers.SerializerMethodField()
 
     hired_labor_id = serializers.IntegerField(source='hire_labor.id', read_only=True)
@@ -66,9 +67,10 @@ class RequirementSerializer(serializers.ModelSerializer):
             'is_open', 'requirement_type', 'can_update',
             'hired_labor_id', 'hired_labor_name',
             'hired_tractor_id', 'hired_tractor_name',
-            'farmer_rating'
+            'farmer_rating','bid_count'
         ]
-
+    def get_bid_count(self, obj):
+        return obj.bids.count()
     def get_farmer_rating(self, obj):
         if not obj.farmer or not obj.skill:
             return None
@@ -88,9 +90,7 @@ class RequirementSerializer(serializers.ModelSerializer):
         return obj.skill.skill_name if obj.skill else None
 
     def get_requirement_type(self, obj):
-        if obj.skill:
-            return obj.skill.skill_type
-        return "unknown"
+        return obj.skill.skill_type if obj.skill else "unknown"
 
     def get_can_update(self, obj):
         return obj.is_open and not Bid.objects.filter(requirement=obj).exists()

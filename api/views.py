@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.exceptions import PermissionDenied
 
 from .models import *
 from .serializers import *
@@ -243,18 +244,60 @@ class AreaViewSet(viewsets.ReadOnlyModelViewSet):
 
 class BidViewSet(viewsets.ModelViewSet):
     serializer_class = BidSerializer
-    permission_classes = [IsLabor | IsTractor]
 
     def get_queryset(self):
-        if user_in_group(self.request.user, 'labor') and hasattr(self.request.user, 'labor'):
-            return Bid.objects.filter(labor=self.request.user.labor)
-        elif user_in_group(self.request.user, 'tractor') and hasattr(self.request.user, 'tractor'):
-            return Bid.objects.filter(tractor=self.request.user.tractor)
-        return Bid.objects.none()
+        user = self.request.user
+        queryset = Bid.objects.all()
+
+        # Filter by logged-in user type
+        if user_in_group(user, 'labor') and hasattr(user, 'labor'):
+            queryset = queryset.filter(labor=user.labor)
+        elif user_in_group(user, 'tractor') and hasattr(user, 'tractor'):
+            queryset = queryset.filter(tractor=user.tractor)
+        elif user_in_group(user, 'farmer') and hasattr(user, 'farmer'):
+            queryset = queryset.filter(requirement__farmer=user.farmer)
+        else:
+            return Bid.objects.none()
+        
+        requirement_id = self.request.query_params.get("requirement")
+        if requirement_id:
+            try:
+                queryset = queryset.filter(requirement_id=int(requirement_id))
+            except ValueError:
+                pass  # Ignore invalid integer
+
+        return queryset
+    
 
     def perform_create(self, serializer):
         user = self.request.user
+
         if user_in_group(user, 'labor') and hasattr(user, 'labor'):
             serializer.save(labor=user.labor)
+
         elif user_in_group(user, 'tractor') and hasattr(user, 'tractor'):
             serializer.save(tractor=user.tractor)
+
+        else:
+            raise PermissionDenied("Only laborers or tractor providers can create bids.")
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        instance = serializer.instance
+
+        if instance.labor and instance.labor.user != user:
+            raise PermissionDenied("You can only update your own bids.")
+        if instance.tractor and instance.tractor.user != user:
+            raise PermissionDenied("You can only update your own bids.")
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+
+        if (instance.labor and instance.labor.user != user) or (
+            instance.tractor and instance.tractor.user != user
+        ):
+            raise PermissionDenied("You can only delete your own bids.")
+
+        instance.delete()
