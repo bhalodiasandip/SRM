@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Village, Area, Farmer, Labor, Tractor, Skill,
-    TractorSkill, Requirement, Bid, BidComment
+    Requirement, Bid, BidComment
 )
 
 
@@ -31,7 +31,7 @@ class LaborAdmin(admin.ModelAdmin):
 @admin.register(Tractor)
 class TractorAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'contact_number')
-    filter_horizontal = ('villages',)
+    filter_horizontal = ('villages', 'skills')  # ✅ include skills for Tractor
 
 
 @admin.register(Skill)
@@ -41,12 +41,6 @@ class SkillAdmin(admin.ModelAdmin):
         'hourly', 'lump_sump', 'per_bigha', 'per_day', 'per_weight'
     )
     list_filter = ('skill_type',)
-
-
-@admin.register(TractorSkill)
-class TractorSkillAdmin(admin.ModelAdmin):
-    list_display = ('id', 'tractor', 'skill')
-    list_filter = ('skill',)
 
 
 @admin.register(Requirement)

@@ -295,11 +295,11 @@ class RegisterSerializer(serializers.Serializer):
         elif role == "tractor":
             tractor = Tractor.objects.create(user=user, contact_number=phone_number)
             village_ids = validated_data.get("village_ids", [])
-            if village_ids:
-                tractor.villages.set(village_ids)
             skill_ids = validated_data.get("skill_ids", [])
-            for skill_id in skill_ids:
-                TractorSkill.objects.create(tractor=tractor, skill_id=skill_id)
+            if village_ids:
+                tractor.villages.set(village_ids)            
+            if skill_ids:
+                tractor.skills.set(skill_ids)
 
         return user
     

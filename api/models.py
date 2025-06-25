@@ -25,6 +25,26 @@ class Area(models.Model):
     class Meta:
         db_table = "area"
 
+# Skill Model
+class Skill(models.Model):
+    skill_name = models.CharField(max_length=100)
+    skill_type = models.CharField(
+        max_length=10,
+        choices=[("labor", "Labor"), ("tractor", "Tractor")],
+        default="labor"
+    )
+    # Flags for payment types supported by this skill
+    hourly = models.BooleanField(default=False)
+    lump_sump = models.BooleanField(default=False)
+    per_bigha = models.BooleanField(default=False)
+    per_day = models.BooleanField(default=False)
+    per_weight = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.skill_name
+
+    class Meta:
+        db_table = "skill"
 
 # Farmer Model
 class Farmer(models.Model):
@@ -63,47 +83,17 @@ class Tractor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     contact_number = models.CharField(max_length=15)
     villages = models.ManyToManyField(Village)
+    skills = models.ManyToManyField(
+        Skill,
+        limit_choices_to={"skill_type": "tractor"},  # Ensures only tractor-type skills
+        related_name="tractors"  # Optional: reverse relation
+    )
 
     def __str__(self):
         return f'{self.user.first_name} - {self.user.last_name}'
 
     class Meta:
         db_table = "tractor"
-
-
-# Skill Model
-class Skill(models.Model):
-    skill_name = models.CharField(max_length=100)
-    skill_type = models.CharField(
-        max_length=10,
-        choices=[("labor", "Labor"), ("tractor", "Tractor")],
-        default="labor"
-    )
-    # Flags for payment types supported by this skill
-    hourly = models.BooleanField(default=False)
-    lump_sump = models.BooleanField(default=False)
-    per_bigha = models.BooleanField(default=False)
-    per_day = models.BooleanField(default=False)
-    per_weight = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.skill_name
-
-    class Meta:
-        db_table = "skill"
-
-
-# Tractor Skill Model
-class TractorSkill(models.Model):
-    tractor = models.ForeignKey(Tractor, on_delete=models.CASCADE)
-    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, limit_choices_to={"skill_type": "tractor"})
-
-    def __str__(self):
-        return f'{self.tractor} - {self.skill}'
-
-    class Meta:
-        db_table = "tractor_skill"
-        unique_together = ('tractor', 'skill')
 
 
 # Requirement Model

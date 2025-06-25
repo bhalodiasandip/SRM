@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import connection
-from api.models import Village, Area, Farmer, Labor, Skill, Requirement, BidComment, Bid, Tractor, TractorSkill
+from api.models import Village, Area, Farmer, Labor, Skill, Requirement, BidComment, Bid, Tractor
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User, Group
 
@@ -10,12 +10,12 @@ def truncate_data():
         cursor.execute('TRUNCATE TABLE "bid_comment" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "bid" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "requirement" RESTART IDENTITY CASCADE')
-        cursor.execute('TRUNCATE TABLE "tractor_skill" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "skill" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "labor" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "farmer_areas" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "farmer_villages" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "tractor_villages" RESTART IDENTITY CASCADE')
+        cursor.execute('TRUNCATE TABLE "tractor_skills" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "farmer" RESTART IDENTITY CASCADE')        
         cursor.execute('TRUNCATE TABLE "tractor" RESTART IDENTITY CASCADE')
         cursor.execute('TRUNCATE TABLE "area" RESTART IDENTITY CASCADE')
@@ -38,7 +38,7 @@ def create_data():
     Area.objects.create(area_name='ખીરસરા ની સીમ', village=v2, area_type='outside')
     Area.objects.create(area_name='જાંબુડો વાડી', village=v2, area_type='outside')
 
-    # Skills with payment type flags
+    # Skills
     s1 = Skill.objects.create(skill_name='નીંદવું', skill_type="labor", per_day=True, lump_sump=True)
     s2 = Skill.objects.create(skill_name='કપાસ ઉપાડવો', skill_type="labor", per_day=True, lump_sump=True, per_weight=True)
     s3 = Skill.objects.create(skill_name='તલ વાઢવા', skill_type="labor", per_day=True, lump_sump=True)
@@ -50,7 +50,7 @@ def create_data():
     m4 = Skill.objects.create(skill_name='ઓરણી', skill_type="tractor", per_bigha=True, hourly=True, lump_sump=True)
     m5 = Skill.objects.create(skill_name='ઓટોમેટિક લેવલ', skill_type="tractor", per_bigha=True, hourly=True, lump_sump=True)
 
-    # Users (Farmer, Labor, Tractor)
+    # Users
     f_user = User.objects.get(username="9510777630")
     l_user = User.objects.get(username="9784123569")
     t_user = User.objects.get(username="9428123456")
@@ -66,10 +66,7 @@ def create_data():
     # Tractor
     tractor = Tractor.objects.create(user=t_user, contact_number='9428123456')
     tractor.villages.set([v1, v2])
-
-    # Tractor Skills
-    TractorSkill.objects.create(tractor=tractor, skill=m2)  # Rotavator
-    TractorSkill.objects.create(tractor=tractor, skill=m5)  # Auto Level
+    tractor.skills.set([m2, m5])  # ✅ SET skills using new ManyToManyField
 
     # Requirements        
     req1 = Requirement.objects.create(
