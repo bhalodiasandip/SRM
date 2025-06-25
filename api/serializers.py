@@ -223,6 +223,11 @@ class RegisterSerializer(serializers.Serializer):
 
     # Tractor-specific fields
     skill_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
+    
+    def validate_phone_number(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("A user with this phone number already exists.")
+        return value
 
     def validate(self, data):
         role = data["role"]
